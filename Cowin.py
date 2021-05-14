@@ -30,24 +30,30 @@ COVISHIELD="COVISHIELD"
 
 
 
+
+# leave blank if you want all pincodes in the district
+preferred_pincodes=[]
+
+#example - preferred_pincodes=[827013,827006]
+
+
+
 # add user here 
 #params 0 - Vaccine type -> "*" for any vaccine, "COVAXIN"
 #Params 1 - age limit   18 or 45
 #params 3 - distric ID - If you do not know the districtID please see in text attached
-rohit=["*",18,"242"]
+rohit=["*",18,"242",preferred_pincodes]
 
+# examples 
 # sample_user= [COVAXIN,18,341]
-rohit= [COVISHIELD,45,242]
+# rohit= [COVISHIELD,45,242]
 
 
 
 # register user here , comma separated
 reg = [rohit]
 
-# leave blank if you want all pincodes in the district
-preferred_pincodes=[]
 
-#example - preferred_pincodes=[827013,827006]
 
 
 
@@ -72,13 +78,17 @@ ca+="--header \"Sec-Fetch-Mode: navigate\" "
 ca+="--header \"dnt: 1\""
 
 
-def getSlots(vaccine,age,DIST_ID):
+def getSlots(vaccine,age,DIST_ID,preferred_pincodes):
     reply=[]
     stra=""
 
-    curl=ca.format(DIST_ID, date_str[0] )
+    curl=ca.format(DIST_ID, date_str[0])
     stream = os.popen(curl)
-    output = stream.read()  
+    
+    output = stream.read()
+    if(len(output)<=0):
+        print("failed to connect to cowin server. Please check internet!")
+        return reply
     f = json.loads(output)
     centers=f["centers"]
     #time.sleep(5)
@@ -112,27 +122,31 @@ def getSlots(vaccine,age,DIST_ID):
 
 while(1):
     print("@@@@@@@ Retrying to get slots")
-    for i in reg:
-        reply=getSlots("*",i[1],i[2])
-        if (len(reply)>0):
-            now = dt.now()
-            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-            print("At least any one vaccine is available at date and time =", dt_string)
-            for j in reply:
-                print ("\n<<<<<<<<<<<")
-                print (j)
-           
-    for i in reg:
-        reply=getSlots(i[0],i[1],i[2])
-        if (len(reply)>0):
-            for j in reply:
-                print ("\n>>>>>>>>>>")
-                print (j)
-            for i in range(50):
-                beepy.beep(5)
-    print ("over")
+    try:
+        
+        for i in reg:
+            reply=getSlots("*",i[1],i[2],i[3])
+            if (len(reply)>0):
+                now = dt.now()
+                dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                print("At least any one vaccine is available at date and time =", dt_string)
+                for j in reply:
+                    print ("\n<<<<< any  <<<<<<")
+                    print (j)
+               
+        for i in reg:
+            reply=getSlots(i[0],i[1],i[2],i[3])
+            if (len(reply)>0):
+                for j in reply:
+                    print ("\n>>>>  your selected vaccine >>>>>>")
+                    print (j)
+                for i in range(50):
+                    beepy.beep(5)
+    except:
+        print("some error occured while retriving info from cowin server")
+
     
-    time.sleep(180)
+    time.sleep(60)
 
     
     
